@@ -2,7 +2,9 @@
  
 Single page sidecar to throw your real-time charts at.
 
-1. Build and run the `amon` container
+![image](https://github.com/user-attachments/assets/ee768a5b-5095-4789-8648-0e317e61cff6)
+
+1. Build and run the `amon` container.
 
 ```bash
 docker build . -t amon
