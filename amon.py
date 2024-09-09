@@ -1,15 +1,17 @@
-import requests
+import json
+from urllib import request
 
 
 class Amon:
     def __init__(self, url="http://localhost:8000", max_chart_len=200):
         self.url = url
-        requests.post(
-            self.url + "/config",
-            json={
+        request.urlopen(request.Request(
+            f"{self.url}/config",
+            headers={'Content-Type': 'application/json'},
+            data=json.dumps({
                 "max_chart_len": max_chart_len,
-            },
-        )
+            }).encode()
+        ))
 
     def configure(self, max_chart_len=None, begin_at_zero=None):
         options = {}
@@ -18,15 +20,20 @@ class Amon:
         if begin_at_zero is not None:
             options["begin_at_zero"] = begin_at_zero
 
-        requests.post(self.url + "/config", json=options)
+        request.urlopen(request.Request(
+            f"{self.url}/config",
+            headers={'Content-Type': 'application/json'},
+            data=json.dumps(options).encode()
+        ))
 
     def create_chart(self, chart_id: str):
-        requests.post(
-            self.url + "/chart",
-            json={
+        request.urlopen(request.Request(
+            f"{self.url}/chart",
+            headers={'Content-Type': 'application/json'},
+            data=json.dumps({
                 "chart_id": chart_id,
-            },
-        )
+            }).encode()
+        ))
 
     def push_data(
         self,
@@ -36,13 +43,14 @@ class Amon:
         data: list,
         border_color: str = "rgb(75, 192, 192",
     ):
-        requests.post(
-            self.url + "/data",
-            json={
+        request.urlopen(request.Request(
+            f"{self.url}/data",
+            headers={'Content-Type': 'application/json'},
+            data=json.dumps({
                 "chart_id": chart_id,
                 "label": label,
                 "labels": labels,
                 "border_color": border_color,
                 "data": data,
-            },
-        )
+            }).encode()
+        ))
