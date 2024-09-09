@@ -54,9 +54,26 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
         await manager.disconnect(client_id)
 
 
-@app.post("/chart")
-async def post(request: Request):
+@app.post("/config")
+async def configure_charts(request: Request):
     data = await request.json()
+    data["type"] = "config"
+    await manager.broadcast(data)
+    return {"result": "ok"}
+
+
+@app.post("/chart")
+async def create_chart(request: Request):
+    data = await request.json()
+    data["type"] = "chart"
+    await manager.broadcast(data)
+    return {"result": "ok"}
+
+
+@app.post("/data")
+async def push_data(request: Request):
+    data = await request.json()
+    data["type"] = "data"
     await manager.broadcast(data)
     return {"result": "ok"}
 

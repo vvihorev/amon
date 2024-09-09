@@ -1,32 +1,75 @@
-<div>
-    <canvas id="myChart"></canvas>
+<h1 style="font-family: monospace">amon</h1>
+<p style="font-family: monospace">a sidecar to throw real-time charts at</p>
+<div id="charts" style="overflow-y: scroll; height:90vh;">
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-    var chart = null;
-    const ctx = document.getElementById('myChart');
-    const MAX_CHART_LEN = 10;
+    var chartsContainer = document.getElementById("charts")
+    const charts = {};
+    let chart = null;
+
+    /* 
+     * Configuration 
+     */
+    var max_chart_len = 200;
+    var begin_at_zero = true;
 
     function connectWebSocket(username) {
         websocket = new WebSocket(`/ws/${username}`);
 
         websocket.onmessage = async (event) => {
             const message = JSON.parse(event.data);
-            console.log(message);
             switch (message.type) {
+                case "config":
+                    if (message.max_chart_len) max_chart_len = message.max_chart_len;
+                    if (message.begin_at_zero) begin_at_zero = message.begin_at_zero;
+                    break;
                 case "chart":
-                    chart.data.datasets.forEach((dataset) => {
-                        dataset.data.push(...message.data);
-                        if (dataset.data.length > MAX_CHART_LEN) {
-                            dataset.data = dataset.data.slice(dataset.data.length - MAX_CHART_LEN, dataset.data.length);
+                    let chartElement = document.createElement('canvas');
+                    chartElement.style['max-height'] = '200px';
+                    chartsContainer.appendChild(chartElement);
+                    chart = new Chart(chartElement, {
+                        type: 'line',
+                        labels: [],
+                        data: {
+                            labels: [],
+                            datasets: [],
+                        },
+                        options: {
+                            indexAxis: 'x',
+                            scales: {
+                                y: {
+                                    beginAtZero: begin_at_zero
+                                }
+                            }
                         }
                     });
-                    labels.push(...message.labels);
-                    if (labels.length > MAX_CHART_LEN) {
-                        chart.data.labels = labels.slice(labels.length - MAX_CHART_LEN, labels.length);
+                    charts[message.chart_id] = chart
+                    break;
+                case "data":
+                    chart = charts[message.chart_id]
+                    dataset = chart.data.datasets.find((dataset) => dataset.label === message.label);
+                    if (dataset === undefined) {
+                        chart.data.datasets.push({
+                            label: message.label,
+                            data: [],
+                            fill: false,
+                            borderColor: message.border_color,
+                            backgroundColor: message.border_color,
+                            tension: 0.1
+                        })
+                        dataset = chart.data.datasets.find((dataset) => dataset.label === message.label);
                     }
+
+                    chart.data.labels.push(...message.labels);
+                    dataset.data.push(...message.data);
+                    if (dataset.data.length > max_chart_len) {
+                        dataset.data = dataset.data.slice(dataset.data.length - max_chart_len, dataset.data.length);
+                        chart.data.labels = chart.data.labels.slice(chart.data.labels.length - max_chart_len, chart.data.labels.length);
+                    }
+
                     chart.update();
             }
         };
@@ -41,22 +84,4 @@
     }
 
     connectWebSocket("user");
-
-    var labels = [];
-    const data = {
-        labels: labels,
-        datasets: [{
-            label: 'My First Dataset',
-            data: [],
-            fill: false,
-            borderColor: 'rgb(75, 192, 192)',
-            tension: 0.1
-        }]
-    };
-
-    chart = new Chart(ctx, {
-        type: 'line',
-        labels: labels,
-        data: data,
-    });
 </script>
