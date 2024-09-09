@@ -1,0 +1,4 @@
+fastapi==0.114.0
+Flask==3.0.3
+Flask-Cors==5.0.0
+websockets==13.0.1

@@ -1,0 +1,62 @@
+<div>
+    <canvas id="myChart"></canvas>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    var chart = null;
+    const ctx = document.getElementById('myChart');
+    const MAX_CHART_LEN = 10;
+
+    function connectWebSocket(username) {
+        websocket = new WebSocket(`/ws/${username}`);
+
+        websocket.onmessage = async (event) => {
+            const message = JSON.parse(event.data);
+            console.log(message);
+            switch (message.type) {
+                case "chart":
+                    chart.data.datasets.forEach((dataset) => {
+                        dataset.data.push(...message.data);
+                        if (dataset.data.length > MAX_CHART_LEN) {
+                            dataset.data = dataset.data.slice(dataset.data.length - MAX_CHART_LEN, dataset.data.length);
+                        }
+                    });
+                    labels.push(...message.labels);
+                    if (labels.length > MAX_CHART_LEN) {
+                        chart.data.labels = labels.slice(labels.length - MAX_CHART_LEN, labels.length);
+                    }
+                    chart.update();
+            }
+        };
+
+        websocket.onopen = () => {
+            console.log('WebSocket connection established');
+        };
+
+        websocket.onclose = () => {
+            window.alert('WebSocket connection closed');
+        };
+    }
+
+    connectWebSocket("user");
+
+    var labels = [];
+    const data = {
+        labels: labels,
+        datasets: [{
+            label: 'My First Dataset',
+            data: [],
+            fill: false,
+            borderColor: 'rgb(75, 192, 192)',
+            tension: 0.1
+        }]
+    };
+
+    chart = new Chart(ctx, {
+        type: 'line',
+        labels: labels,
+        data: data,
+    });
+</script>
